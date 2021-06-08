@@ -1,71 +1,38 @@
 package Activities;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.github.zafarkhaja.semver.ParseException;
+import au.com.dius.pact.core.model.annotations.PactFolder;
+import au.com.dius.pact.provider.junit.Provider;
+import au.com.dius.pact.provider.junit.State;
+import au.com.dius.pact.provider.junit5.HttpTestTarget;
+import au.com.dius.pact.provider.junit5.PactVerificationContext;
+import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvider;
 
-import au.com.dius.pact.consumer.dsl.DslPart;
-import au.com.dius.pact.consumer.dsl.PactDslJsonBody;
-import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
-import au.com.dius.pact.consumer.junit5.PactConsumerTestExt;
-import au.com.dius.pact.consumer.junit5.PactTestFor;
-import au.com.dius.pact.core.model.RequestResponsePact;
-import au.com.dius.pact.core.model.annotations.Pact;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
+@Provider("UserProvider")
+	@PactFolder("target/pacts")
 
-@ExtendWith(PactConsumerTestExt.class)
-public class PactConsumerTest {
-	Map<String, String> headers = new HashMap<String, String>();
-	String createUser = "/api/users";
-	
-	@Pact(provider = "UserProvider", consumer = "UserConsumer")
-	public RequestResponsePact createPact(PactDslWithProvider builder) throws ParseException {
-	
-		headers.put("Content-Type", "application/json");
-		headers.put("Accept", "application/json");
+	public class PactProviderTest {
+		@BeforeEach
+		void before(PactVerificationContext context) throws MalformedURLException {
+
+			context.setTarget(HttpTestTarget.fromUrl(new URL("https://localhost:8080")));
+		}
 		
 		
-		DslPart bodySentCreateUser=new PactDslJsonBody()
-				.numberType("id",1)
-				.stringType("firstname","string")
-				.stringType("lasttname","string")
-				.stringType("Email","string");
-		DslPart bodyReceiveCreateUser=new PactDslJsonBody()
-				.numberType("id",1)
-				.stringType("firstname","string")
-				.stringType("lasttname","string")
-				.stringType("Email","string");
-		return builder.given("A request to create user")
-				.uponReceiving("A request to create user")
-				.path(createUser)
-				.method("POST")
-				.headers(headers)
-				.body(bodySentCreateUser)
-				.willRespondWith()
-				.status(201)
-				.body(bodyReceiveCreateUser)
-				.toPact();
+	@TestTemplate
+	@ExtendWith(PactVerificationInvocationContextProvider.class)
+	void pactTestTemplate(PactVerificationContext context) {
+	      
+	     context.verifyInteraction();
 	}
-	@Test
-	@PactTestFor(providerName = "UserProvider", port = "8080")
-	public void runTest() {
 
-		RestAssured.baseURI = "http://localhost:8080";
-		RequestSpecification rq = RestAssured.given().headers(headers).when();
-		Map<String, Object> map = new HashMap<String, Object>();
-		map.put("id", 1);
-		map.put("firstName", "Hima");
-		map.put("lastName", "Nag");
-		map.put("email", "Himanag@amail.com");
-		Response response = rq.body(map).post(createUser);
-		assert (response.getStatusCode() == 201);
+		@State("A request to create a meeting for my provider")
+		public void sampleState() {}
 }
-}	
-	
 	
